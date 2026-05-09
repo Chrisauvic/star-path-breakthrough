@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#050814">
+    <title>星轨突围</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="game-shell" aria-label="星轨突围 HTML5 手机竖屏游戏">
+      <canvas id="gameCanvas" width="720" height="1280" aria-label="游戏画布"></canvas>
+
+      <section id="startScreen" class="screen screen--active screen--home">
+        <div class="hero-orbit" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="hero-ship" aria-hidden="true">
+          <span class="hero-ship__wing hero-ship__wing--left"></span>
+          <span class="hero-ship__body"></span>
+          <span class="hero-ship__wing hero-ship__wing--right"></span>
+          <span class="hero-ship__flame"></span>
+        </div>
+        <div class="brand">
+          <span class="brand__mark"></span>
+          <span>星轨突围</span>
+        </div>
+        <div class="home-copy">
+          <p class="eyebrow">STAR PATH OPS</p>
+          <h1>Star Path Breakthrough</h1>
+          <p>拖动战机穿越弹幕，收集星核，积攒能量释放脉冲。每一关都会给出作战评分。</p>
+        </div>
+        <div class="mission-strip" aria-hidden="true">
+          <span>5 个星域</span>
+          <span>3 类道具</span>
+          <span>作战评分</span>
+        </div>
+        <button id="startButton" class="primary-button" type="button">启动作战</button>
+        <button id="tutorialButton" class="secondary-button" type="button">作战教程</button>
+      </section>
+
+      <section id="tutorialScreen" class="screen screen--briefing" aria-live="polite">
+        <p class="eyebrow">PILOT BRIEFING</p>
+        <h2>作战教程</h2>
+        <div class="tutorial-list">
+          <p><strong>拖动战机</strong><span>穿过星际跑道，避开陨石、追踪雷和激光门。</span></p>
+          <p><strong>收集星核</strong><span>达到目标数量即可打开星门，连击会提高评分。</span></p>
+          <p><strong>战术道具</strong><span>绿色能量碎片充能，蓝色护盾抵消伤害，紫色时间晶体延长倒计时。</span></p>
+          <p><strong>能量脉冲</strong><span>充能 100% 后点击右下按钮，清除当前危险物。</span></p>
+        </div>
+        <button id="tutorialBackButton" class="primary-button" type="button">返回启动页</button>
+      </section>
+
+      <section id="levelScreen" class="screen screen--briefing" aria-live="polite">
+        <p id="levelKicker" class="eyebrow">第 1 关</p>
+        <h2 id="levelTitle">晨星航道</h2>
+        <p id="levelBrief">收集星核，穿过第一道巡航网。</p>
+        <div class="brief-grid" aria-hidden="true">
+          <div>
+            <span>目标</span>
+            <strong id="briefGoal">8</strong>
+          </div>
+          <div>
+            <span>威胁</span>
+            <strong id="briefThreat">低</strong>
+          </div>
+          <div>
+            <span>奖励</span>
+            <strong>评分</strong>
+          </div>
+        </div>
+        <button id="levelButton" class="primary-button" type="button">进入关卡</button>
+      </section>
+
+      <section id="resultScreen" class="screen screen--result" aria-live="polite">
+        <p class="eyebrow">MISSION CLEAR</p>
+        <h2 id="resultTitle">作战完成</h2>
+        <strong id="resultRank" class="rank">S</strong>
+        <div class="score-grid">
+          <div>
+            <span>作战得分</span>
+            <strong id="resultScore">0</strong>
+          </div>
+          <div>
+            <span>最高连击</span>
+            <strong id="resultCombo">0</strong>
+          </div>
+          <div>
+            <span>剩余护盾</span>
+            <strong id="resultLives">3</strong>
+          </div>
+          <div>
+            <span>用时</span>
+            <strong id="resultTime">0.0s</strong>
+          </div>
+        </div>
+        <p id="resultComment" class="result-comment">星门已稳定。</p>
+        <button id="nextButton" class="primary-button" type="button">下一关</button>
+      </section>
+
+      <section id="gameOverScreen" class="screen screen--briefing" aria-live="polite">
+        <p class="eyebrow">MISSION FAILED</p>
+        <h2>Game Over</h2>
+        <p>航线已记录，重新校准后可继续挑战本关。</p>
+        <button id="retryButton" class="primary-button" type="button">重试本关</button>
+      </section>
+
+      <section id="pauseScreen" class="screen screen--briefing" aria-live="polite">
+        <p class="eyebrow">PAUSED</p>
+        <h2>作战暂停</h2>
+        <p>调整呼吸，星门不会自己跑掉。</p>
+        <button id="resumeButton" class="primary-button" type="button">继续作战</button>
+        <button id="restartButton" class="secondary-button" type="button">重开本关</button>
+      </section>
+
+      <div id="clearOverlay" class="clear-overlay" aria-hidden="true">
+        <div class="clear-gate">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <strong>Level Complete</strong>
+        <p id="clearText">星门正在展开</p>
+      </div>
+
+      <div id="hud" class="hud hud--hidden" aria-hidden="true">
+        <div class="hud__stack">
+          <div>
+            <span>Score</span>
+            <strong id="hudPoints">0</strong>
+          </div>
+          <div>
+            <span>Lives</span>
+            <strong><b id="hudLives">3</b>/<b id="hudMaxLives">3</b></strong>
+          </div>
+        </div>
+        <div class="hud__level">
+          <span>Level</span>
+          <strong id="hudLevel">1</strong>
+        </div>
+        <div class="hud__stack hud__stack--right">
+          <div>
+            <span>Cores</span>
+            <strong><b id="hudScore">0</b>/<b id="hudGoal">8</b></strong>
+          </div>
+          <div>
+            <span>Combo</span>
+            <strong id="hudCombo">0</strong>
+          </div>
+        </div>
+        <div class="hud__energy">
+          <span>脉冲</span>
+          <strong id="hudEnergy">0%</strong>
+          <i id="energyFill"></i>
+        </div>
+        <div class="hud__timer">
+          <span>Time</span>
+          <strong id="hudTime">45</strong>
+        </div>
+      </div>
+
+      <button id="soundButton" class="sound-button" type="button" aria-label="切换音效">♪</button>
+      <button id="pauseButton" class="pause-button pause-button--hidden" type="button" aria-label="暂停游戏">Ⅱ</button>
+      <button id="pulseButton" class="pulse-button pulse-button--hidden" type="button" aria-label="释放能量脉冲">
+        <span>脉冲</span>
+      </button>
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>
