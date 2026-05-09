@@ -127,6 +127,36 @@ const levels = [
   },
 ];
 
+const assetUrls = {
+  start: "assets/optimized/bg-start.jpg",
+  fail: "assets/optimized/bg-fail.jpg",
+  clear: "assets/optimized/bg-clear.jpg",
+  sprites: "assets/optimized/ui-spritesheet.png",
+  levelBackgrounds: [
+    "assets/optimized/bg-level-1.jpg",
+    "assets/optimized/bg-level-2.jpg",
+    "assets/optimized/bg-level-3.jpg",
+    "assets/optimized/bg-level-2.jpg",
+    "assets/optimized/bg-level-3.jpg",
+  ],
+};
+
+const sprites = {
+  player: { x: 24, y: 23, w: 197, h: 225 },
+  core: { x: 277, y: 30, w: 167, h: 165 },
+  hazard: { x: 513, y: 28, w: 190, h: 167 },
+  crystal: { x: 787, y: 25, w: 200, h: 195 },
+  mine: { x: 28, y: 268, w: 203, h: 207 },
+  gate: { x: 260, y: 263, w: 220, h: 220 },
+  shield: { x: 56, y: 487, w: 123, h: 123 },
+  heart: { x: 219, y: 499, w: 140, h: 110 },
+  flareGold: { x: 53, y: 807, w: 113, h: 100 },
+  flareBlue: { x: 220, y: 807, w: 113, h: 100 },
+  blast: { x: 47, y: 933, w: 127, h: 87 },
+};
+
+const assets = { loaded: false, backgrounds: [], spritesheet: null };
+
 const state = {
   mode: "start",
   levelIndex: 0,
@@ -169,6 +199,24 @@ const state = {
 let audioContext;
 let ambientMusic;
 let lastFrameTime = 0;
+
+function loadImage(src) {
+  if (typeof Image === "undefined") return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = src;
+  });
+}
+
+function loadAssets() {
+  Promise.all([loadImage(assetUrls.sprites), ...assetUrls.levelBackgrounds.map(loadImage)]).then(([spritesheet, ...backgrounds]) => {
+    assets.spritesheet = spritesheet;
+    assets.backgrounds = backgrounds;
+    assets.loaded = true;
+  });
+}
 
 function showScreen(name) {
   Object.values(screens).forEach((screen) => screen.classList.remove("screen--active"));
@@ -434,6 +482,18 @@ function burst(x, y, color, count = 14, spread = 190) {
 
 function distance(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function drawSprite(name, x, y, width, height, rotation = 0, alpha = 1) {
+  const sprite = sprites[name];
+  if (!assets.spritesheet || !sprite) return false;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.globalAlpha *= alpha;
+  ctx.drawImage(assets.spritesheet, sprite.x, sprite.y, sprite.w, sprite.h, -width / 2, -height / 2, width, height);
+  ctx.restore();
+  return true;
 }
 
 function setMode(mode) {
@@ -751,12 +811,23 @@ function update(dt, time) {
 
 function drawBackground(time) {
   const level = levels[state.levelIndex];
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, "#050814");
-  gradient.addColorStop(0.46, "#101b33");
-  gradient.addColorStop(1, "#091a20");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const background = assets.backgrounds[state.levelIndex % assets.backgrounds.length];
+  if (background) {
+    const scale = Math.max(canvas.width / background.width, canvas.height / background.height);
+    const width = background.width * scale;
+    const height = background.height * scale;
+    const drift = state.mode === "playing" ? (time * 0.018) % 36 : Math.sin(time * 0.0004) * 10;
+    ctx.drawImage(background, (canvas.width - width) / 2, (canvas.height - height) / 2 + drift, width, height);
+    ctx.fillStyle = "rgba(5, 8, 20, 0.18)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, "#050814");
+    gradient.addColorStop(0.46, "#101b33");
+    gradient.addColorStop(1, "#091a20");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
   ctx.save();
   ctx.globalAlpha = 0.24;
@@ -846,6 +917,25 @@ function drawPlayer(time) {
   const flicker = player.invulnerable > 0 && Math.floor(time / 90) % 2 === 0;
   if (flicker) ctx.globalAlpha = 0.48;
 
+  if (drawSprite("player", player.x, player.y - 12, 148, 170, 0, 1)) {
+    ctx.save();
+    ctx.globalAlpha = 0.58;
+    const trail = ctx.createLinearGradient(player.x, player.y + 36, player.x, player.y + 170);
+    trail.addColorStop(0, "#f7fbff");
+    trail.addColorStop(0.25, "#ffcf5a");
+    trail.addColorStop(0.68, "#ff4e80");
+    trail.addColorStop(1, "rgba(89, 214, 255, 0)");
+    ctx.fillStyle = trail;
+    ctx.beginPath();
+    ctx.moveTo(player.x - 32, player.y + 38);
+    ctx.quadraticCurveTo(player.x, player.y + 155 + Math.sin(time * 0.01) * 10, player.x + 32, player.y + 38);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    return;
+  }
+
   ctx.save();
   ctx.translate(player.x, player.y);
   ctx.shadowColor = "#59d6ff";
@@ -914,6 +1004,7 @@ function drawPlayer(time) {
 
 function drawHazards() {
   state.hazards.forEach((hazard) => {
+    if (drawSprite("hazard", hazard.x, hazard.y, hazard.radius * 2.15, hazard.radius * 1.9, hazard.spin)) return;
     ctx.save();
     ctx.translate(hazard.x, hazard.y);
     ctx.rotate(hazard.spin);
@@ -938,6 +1029,7 @@ function drawHazards() {
 function drawCores() {
   state.cores.forEach((core) => {
     const pulse = Math.sin(core.pulse) * 4;
+    if (drawSprite("core", core.x, core.y, 62 + pulse, 62 + pulse, core.pulse * 0.25)) return;
     ctx.save();
     ctx.translate(core.x, core.y);
     ctx.shadowColor = "#ffcf5a";
@@ -957,6 +1049,7 @@ function drawCores() {
 function drawShards() {
   state.shards.forEach((shard) => {
     const pulse = Math.sin(shard.pulse) * 3;
+    if (drawSprite("crystal", shard.x, shard.y, 52 + pulse, 58 + pulse, shard.pulse * 0.2)) return;
     ctx.save();
     ctx.translate(shard.x, shard.y);
     ctx.rotate(shard.pulse);
@@ -977,6 +1070,7 @@ function drawShards() {
 function drawMines() {
   state.mines.forEach((mine) => {
     const pulse = Math.sin(mine.pulse) * 5;
+    if (drawSprite("mine", mine.x, mine.y, 74 + pulse, 74 + pulse, mine.pulse * 0.35)) return;
     ctx.save();
     ctx.translate(mine.x, mine.y);
     ctx.rotate(mine.pulse * 0.4);
@@ -1021,6 +1115,7 @@ function drawGates() {
     ctx.fillRect(gate.x - gate.gap / 2 - 8, gate.y - 12, 16, 24);
     ctx.fillRect(gate.x + gate.gap / 2 - 8, gate.y - 12, 16, 24);
     ctx.restore();
+    drawSprite("gate", gate.x, gate.y, gate.gap * 0.55, gate.gap * 0.55, gate.pulse * 0.18, 0.42);
   });
 }
 
@@ -1033,6 +1128,8 @@ function drawPowerups() {
   state.powerups.forEach((powerup) => {
     const color = colors[powerup.type];
     const pulse = Math.sin(powerup.pulse) * 4;
+    const spriteName = powerup.type === "shield" ? "shield" : powerup.type === "time" ? "heart" : "crystal";
+    if (drawSprite(spriteName, powerup.x, powerup.y, 56 + pulse, 56 + pulse, powerup.pulse * 0.25)) return;
     ctx.save();
     ctx.translate(powerup.x, powerup.y);
     ctx.rotate(powerup.pulse * 0.5);
@@ -1232,6 +1329,7 @@ window.addEventListener("resize", () => render(performance.now()));
 window.addEventListener("contextmenu", (event) => event.preventDefault());
 
 initBackdrop();
+loadAssets();
 prepareLevel(0);
 showScreen("start");
 requestAnimationFrame(loop);
