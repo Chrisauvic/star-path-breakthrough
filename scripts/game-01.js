@@ -13,6 +13,10 @@ const screens = {
 const ui = {
   clearOverlay: document.getElementById("clearOverlay"),
   finalGateOverlay: document.getElementById("finalGateOverlay"),
+  finalVideoOverlay: document.getElementById("finalVideoOverlay"),
+  finalVideo: document.getElementById("finalVideo"),
+  playFinalVideoButton: document.getElementById("playFinalVideoButton"),
+  skipFinalVideoButton: document.getElementById("skipFinalVideoButton"),
   clearText: document.getElementById("clearText"),
   pulseButton: document.getElementById("pulseButton"),
   soundButton: document.getElementById("soundButton"),
@@ -133,6 +137,8 @@ const assetUrls = {
   fail: "assets/optimized/bg-fail.jpg",
   clear: "assets/optimized/bg-clear.jpg",
   sprites: "assets/optimized/ui-spritesheet-game.png",
+  music: "assets/audio/tech-loop.wav",
+  finalVideo: "assets/video/final-clear.mp4",
   levelBackgrounds: [
     "assets/optimized/bg-level-1.jpg",
     "assets/optimized/bg-level-2.jpg",

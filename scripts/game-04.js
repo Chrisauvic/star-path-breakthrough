@@ -143,7 +143,7 @@ function update(dt, time) {
 
   if (state.mode === "finalGate") {
     state.finalGateTimer -= dt;
-    if (state.finalGateTimer <= 0) showResult();
+    if (state.finalGateTimer <= 0) showFinalResult();
     return;
   }
 

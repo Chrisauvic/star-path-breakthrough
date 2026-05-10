@@ -163,6 +163,28 @@ ui.nextButton.addEventListener("click", () => {
   playTone("tap");
 });
 
+ui.playFinalVideoButton.addEventListener("click", () => {
+  if (!ui.finalVideo) return;
+  ui.finalVideo.muted = false;
+  ui.finalVideo.volume = 1;
+  ui.finalVideoOverlay.classList.remove("final-video-overlay--needs-tap");
+  ui.playFinalVideoButton.hidden = true;
+  const playPromise = ui.finalVideo.play();
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => {
+      ui.playFinalVideoButton.hidden = false;
+      ui.finalVideoOverlay.classList.add("final-video-overlay--needs-tap");
+    });
+  }
+});
+
+ui.skipFinalVideoButton.addEventListener("click", () => {
+  if (ui.finalVideo) ui.finalVideo.pause();
+  ui.finalVideoOverlay.classList.remove("final-video-overlay--active");
+  ui.finalVideoOverlay.classList.remove("final-video-overlay--needs-tap");
+  showResult();
+});
+
 document.getElementById("retryButton").addEventListener("click", () => {
   prepareLevel(state.levelIndex);
   setMode("level");

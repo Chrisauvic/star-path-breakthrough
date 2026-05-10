@@ -82,7 +82,6 @@ function fireMissile() {
     life: 1.25,
     pulse: 0,
   });
-  playTone("shard");
 }
 
 function burst(x, y, color, count = 14, spread = 190) {
@@ -163,13 +162,69 @@ function showResult() {
   ui.nextButton.textContent = state.levelIndex === levels.length - 1 ? "再战一轮" : "下一关";
   ui.clearOverlay.classList.remove("clear-overlay--active");
   ui.finalGateOverlay.classList.remove("final-gate-overlay--active");
+  ui.finalVideoOverlay.classList.remove("final-video-overlay--active");
   setMode("result");
+}
+
+function showFinalResult() {
+  if (!playFinalVideo()) showResult();
+}
+
+function playFinalVideo() {
+  const video = ui.finalVideo;
+  if (!video || !ui.finalVideoOverlay || !video.canPlayType || !video.canPlayType("video/mp4")) return false;
+  state.mode = "finalVideo";
+  state.finalGateTimer = 0;
+  if (!video.src) video.src = assetUrls.finalVideo;
+  video.poster = assetUrls.clear;
+  video.currentTime = 0;
+  video.muted = state.muted;
+  video.volume = 1;
+  video.controls = false;
+  ui.finalVideoOverlay.classList.add("final-video-overlay--active");
+  ui.finalVideoOverlay.classList.remove("final-video-overlay--needs-tap");
+  ui.finalVideoOverlay.classList.add("final-video-overlay--loading");
+  ui.playFinalVideoButton.hidden = true;
+
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    video.pause();
+    ui.finalVideoOverlay.classList.remove("final-video-overlay--active");
+    ui.finalVideoOverlay.classList.remove("final-video-overlay--needs-tap");
+    ui.finalVideoOverlay.classList.remove("final-video-overlay--loading");
+    video.removeEventListener("ended", finish);
+    video.removeEventListener("error", finish);
+    video.removeEventListener("playing", reveal);
+    showResult();
+  };
+  const reveal = () => {
+    ui.finalVideoOverlay.classList.remove("final-video-overlay--loading");
+    ui.finalVideoOverlay.classList.add("final-video-overlay--active");
+  };
+
+  video.addEventListener("ended", finish, { once: true });
+  video.addEventListener("error", finish, { once: true });
+  video.addEventListener("playing", reveal, { once: true });
+  const playPromise = video.play();
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => {
+      video.muted = true;
+      ui.finalVideoOverlay.classList.remove("final-video-overlay--loading");
+      ui.finalVideoOverlay.classList.add("final-video-overlay--active");
+      ui.finalVideoOverlay.classList.add("final-video-overlay--needs-tap");
+      ui.playFinalVideoButton.hidden = false;
+    });
+  }
+  return true;
 }
 
 function openFinalStargate() {
   state.mode = "finalGate";
   state.finalGateTimer = 4.6;
   state.flash = 1;
+  stopAmbientMusic(0.2);
   ui.clearOverlay.classList.remove("clear-overlay--active");
   ui.finalGateOverlay.classList.add("final-gate-overlay--active");
   showScreen(null);
@@ -180,6 +235,7 @@ function completeLevel() {
   state.mode = "clearing";
   state.clearTimer = 2.35;
   state.flash = 1;
+  stopAmbientMusic(0.2);
   state.energy = Math.min(100, state.energy + 20);
   state.hazards = [];
   state.mines = [];
