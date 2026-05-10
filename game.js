@@ -131,7 +131,7 @@ const assetUrls = {
   start: "assets/optimized/bg-start.jpg",
   fail: "assets/optimized/bg-fail.jpg",
   clear: "assets/optimized/bg-clear.jpg",
-  sprites: "assets/optimized/ui-spritesheet.png",
+  sprites: "assets/optimized/ui-spritesheet-game.png",
   levelBackgrounds: [
     "assets/optimized/bg-level-1.jpg",
     "assets/optimized/bg-level-2.jpg",
@@ -142,17 +142,17 @@ const assetUrls = {
 };
 
 const sprites = {
-  player: { x: 24, y: 23, w: 197, h: 225 },
-  core: { x: 277, y: 30, w: 167, h: 165 },
-  hazard: { x: 513, y: 28, w: 190, h: 167 },
-  crystal: { x: 787, y: 25, w: 200, h: 195 },
-  mine: { x: 28, y: 268, w: 203, h: 207 },
-  gate: { x: 260, y: 263, w: 220, h: 220 },
-  shield: { x: 56, y: 487, w: 123, h: 123 },
-  heart: { x: 219, y: 499, w: 140, h: 110 },
-  flareGold: { x: 53, y: 807, w: 113, h: 100 },
-  flareBlue: { x: 220, y: 807, w: 113, h: 100 },
-  blast: { x: 47, y: 933, w: 127, h: 87 },
+  player: { x: 8, y: 0, w: 128, h: 140 },
+  core: { x: 139, y: 15, w: 84, h: 83 },
+  hazard: { x: 257, y: 14, w: 95, h: 84 },
+  crystal: { x: 394, y: 13, w: 100, h: 98 },
+  mine: { x: 14, y: 134, w: 102, h: 104 },
+  gate: { x: 130, y: 132, w: 110, h: 110 },
+  shield: { x: 28, y: 244, w: 62, h: 62 },
+  heart: { x: 110, y: 250, w: 70, h: 55 },
+  flareGold: { x: 27, y: 404, w: 57, h: 50 },
+  flareBlue: { x: 110, y: 404, w: 57, h: 50 },
+  blast: { x: 24, y: 467, w: 64, h: 44 },
 };
 
 const assets = { loaded: false, backgrounds: [], spritesheet: null };
@@ -816,8 +816,12 @@ function drawBackground(time) {
     const scale = Math.max(canvas.width / background.width, canvas.height / background.height);
     const width = background.width * scale;
     const height = background.height * scale;
-    const drift = state.mode === "playing" ? (time * 0.018) % 36 : Math.sin(time * 0.0004) * 10;
-    ctx.drawImage(background, (canvas.width - width) / 2, (canvas.height - height) / 2 + drift, width, height);
+    const playDrift = state.mode === "playing" || state.mode === "clearing";
+    const driftY = playDrift ? Math.sin(time * 0.00018) * 18 : Math.sin(time * 0.00012) * 9;
+    const driftX = playDrift ? Math.sin(time * 0.00011) * 8 : Math.sin(time * 0.00009) * 5;
+    const drawWidth = width * 1.06;
+    const drawHeight = height * 1.06;
+    ctx.drawImage(background, (canvas.width - drawWidth) / 2 + driftX, (canvas.height - drawHeight) / 2 + driftY, drawWidth, drawHeight);
     ctx.fillStyle = "rgba(5, 8, 20, 0.18)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   } else {
@@ -917,18 +921,20 @@ function drawPlayer(time) {
   const flicker = player.invulnerable > 0 && Math.floor(time / 90) % 2 === 0;
   if (flicker) ctx.globalAlpha = 0.48;
 
-  if (drawSprite("player", player.x, player.y - 12, 148, 170, 0, 1)) {
+  if (drawSprite("player", player.x, player.y - 12, 154, 174, 0, 1)) {
     ctx.save();
     ctx.globalAlpha = 0.58;
-    const trail = ctx.createLinearGradient(player.x, player.y + 36, player.x, player.y + 170);
+    const flameX = player.x;
+    const flameTop = player.y + 50;
+    const trail = ctx.createLinearGradient(flameX, flameTop, flameX, player.y + 178);
     trail.addColorStop(0, "#f7fbff");
     trail.addColorStop(0.25, "#ffcf5a");
     trail.addColorStop(0.68, "#ff4e80");
     trail.addColorStop(1, "rgba(89, 214, 255, 0)");
     ctx.fillStyle = trail;
     ctx.beginPath();
-    ctx.moveTo(player.x - 32, player.y + 38);
-    ctx.quadraticCurveTo(player.x, player.y + 155 + Math.sin(time * 0.01) * 10, player.x + 32, player.y + 38);
+    ctx.moveTo(flameX - 24, flameTop);
+    ctx.quadraticCurveTo(flameX, player.y + 164 + Math.sin(time * 0.01) * 10, flameX + 24, flameTop);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
@@ -1184,6 +1190,17 @@ function drawClearingGate(time) {
 }
 
 function render(time) {
+  const drawsGameWorld = state.mode === "playing" || state.mode === "clearing";
+  if (!drawsGameWorld) {
+    ctx.fillStyle = "#050814";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (state.flash > 0) {
+      ctx.fillStyle = `rgba(255, 255, 255, ${state.flash * 0.24})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    return;
+  }
+
   ctx.save();
   if (state.shake > 0) {
     ctx.translate((Math.random() - 0.5) * state.shake * 18, (Math.random() - 0.5) * state.shake * 18);
@@ -1197,9 +1214,7 @@ function render(time) {
   drawHazards();
   drawMines();
   drawParticles();
-  if (state.mode === "playing" || state.mode === "clearing") {
-    drawPlayer(time);
-  }
+  drawPlayer(time);
   ctx.restore();
 
   if (state.mode === "playing" && state.energy >= 100) {
@@ -1213,7 +1228,7 @@ function render(time) {
     ctx.restore();
   }
 
-  if ((state.mode === "playing" || state.mode === "clearing") && state.shield > 0) {
+  if (state.shield > 0) {
     ctx.save();
     ctx.globalAlpha = 0.32 + Math.sin(time * 0.012) * 0.08;
     ctx.strokeStyle = "#59d6ff";
