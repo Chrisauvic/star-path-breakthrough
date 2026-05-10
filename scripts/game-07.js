@@ -1,0 +1,179 @@
+function drawClearingGate(time) {
+  if (state.mode !== "clearing") return;
+  const progress = 1 - Math.max(0, state.clearTimer) / 2.35;
+  const level = levels[state.levelIndex];
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height * 0.34);
+  ctx.strokeStyle = level.colors[2];
+  ctx.shadowColor = level.colors[2];
+  ctx.shadowBlur = 40;
+  ctx.lineWidth = 10;
+  for (let i = 0; i < 4; i += 1) {
+    ctx.rotate(time * 0.001 + i);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 112 + i * 32 + progress * 70, 44 + i * 18, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function render(time) {
+  const drawsGameWorld = state.mode === "playing" || state.mode === "clearing";
+  if (!drawsGameWorld) {
+    ctx.fillStyle = "#050814";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (state.flash > 0) {
+      ctx.fillStyle = `rgba(255, 255, 255, ${state.flash * 0.24})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    return;
+  }
+
+  ctx.save();
+  if (state.shake > 0) {
+    ctx.translate((Math.random() - 0.5) * state.shake * 18, (Math.random() - 0.5) * state.shake * 18);
+  }
+  drawBackground(time);
+  drawClearingGate(time);
+  drawCores();
+  drawShards();
+  drawPowerups();
+  drawGates();
+  drawMissiles();
+  drawHazards();
+  drawMines();
+  drawParticles();
+  drawPlayer(time);
+  ctx.restore();
+
+  if (state.mode === "playing" && state.energy >= 100) {
+    ctx.save();
+    ctx.globalAlpha = 0.2 + Math.sin(time * 0.01) * 0.08;
+    ctx.strokeStyle = "#59d6ff";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(state.player.x, state.player.y, 72, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (state.shield > 0) {
+    ctx.save();
+    ctx.globalAlpha = 0.32 + Math.sin(time * 0.012) * 0.08;
+    ctx.strokeStyle = "#59d6ff";
+    ctx.shadowColor = "#59d6ff";
+    ctx.shadowBlur = 24;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(state.player.x, state.player.y, 58, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (state.flash > 0) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${state.flash * 0.36})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+function loop(time) {
+  const targetFps = state.mode === "playing" || state.mode === "clearing" ? 30 : 18;
+  if (time - lastFrameTime < 1000 / targetFps) {
+    requestAnimationFrame(loop);
+    return;
+  }
+  lastFrameTime = time;
+  const dt = Math.min(0.033, (time - state.lastTime) / 1000 || 0);
+  state.lastTime = time;
+  update(dt, time);
+  render(time);
+  requestAnimationFrame(loop);
+}
+
+function pointerToCanvas(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+    y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+  };
+}
+
+canvas.addEventListener("pointerdown", (event) => {
+  if (state.mode !== "playing") return;
+  state.pointerActive = true;
+  canvas.setPointerCapture(event.pointerId);
+  const point = pointerToCanvas(event);
+  state.player.targetX = point.x;
+  state.player.targetY = point.y;
+});
+
+canvas.addEventListener("pointermove", (event) => {
+  if (!state.pointerActive || state.mode !== "playing") return;
+  const point = pointerToCanvas(event);
+  state.player.targetX = point.x;
+  state.player.targetY = point.y;
+});
+
+canvas.addEventListener("pointerup", () => {
+  state.pointerActive = false;
+});
+
+canvas.addEventListener("pointercancel", () => {
+  state.pointerActive = false;
+});
+
+document.getElementById("startButton").addEventListener("click", () => {
+  playTone("tap");
+  prepareLevel(0);
+  setMode("level");
+});
+
+document.getElementById("levelButton").addEventListener("click", startLevel);
+ui.tutorialButton.addEventListener("click", () => {
+  setMode("tutorial");
+  playTone("tap");
+});
+ui.tutorialBackButton.addEventListener("click", () => {
+  setMode("start");
+  playTone("tap");
+});
+ui.pulseButton.addEventListener("click", activatePulse);
+ui.pauseButton.addEventListener("click", pauseGame);
+ui.resumeButton.addEventListener("click", resumeGame);
+ui.restartButton.addEventListener("click", () => {
+  prepareLevel(state.levelIndex);
+  setMode("level");
+  playTone("tap");
+});
+ui.soundButton.addEventListener("click", () => {
+  state.muted = !state.muted;
+  ui.soundButton.classList.toggle("sound-button--muted", state.muted);
+  ui.soundButton.textContent = state.muted ? "×" : "♪";
+  if (state.muted) stopAmbientMusic();
+  if (!state.muted) {
+    ensureAmbientMusic();
+    playTone("tap");
+  }
+});
+
+ui.nextButton.addEventListener("click", () => {
+  const next = state.levelIndex + 1;
+  prepareLevel(next >= levels.length ? 0 : next);
+  setMode("level");
+  playTone("tap");
+});
+
+document.getElementById("retryButton").addEventListener("click", () => {
+  prepareLevel(state.levelIndex);
+  setMode("level");
+  playTone("tap");
+});
+
+window.addEventListener("resize", () => render(performance.now()));
+window.addEventListener("contextmenu", (event) => event.preventDefault());
+
+initBackdrop();
+loadAssets();
+prepareLevel(0);
+showScreen("start");
+requestAnimationFrame(loop);
