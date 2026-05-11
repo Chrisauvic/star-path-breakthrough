@@ -5,6 +5,7 @@ const root = process.cwd();
 const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 const gameConfig = fs.readFileSync(path.join(root, "scripts", "game-01.js"), "utf8");
 const audioCode = fs.readFileSync(path.join(root, "scripts", "game-02.js"), "utf8");
+const inputCode = fs.readFileSync(path.join(root, "scripts", "game-07.js"), "utf8");
 
 function fail(message) {
   throw new Error(message);
@@ -68,6 +69,14 @@ if (audioCode.includes('"square"') || audioCode.includes('"sawtooth"')) {
 
 if (!audioCode.includes("preloadAudioAssets()")) {
   fail("Scene music should be preloaded before gameplay starts.");
+}
+
+if (!inputCode.includes("updateJoystick") || !inputCode.includes("joystickVector")) {
+  fail("Ship control should use the lower-left virtual joystick.");
+}
+
+if (inputCode.includes("canvas.addEventListener(\"pointerdown\"")) {
+  fail("Canvas drag-to-move control should not be active after switching to joystick control.");
 }
 
 const requiredAssets = [

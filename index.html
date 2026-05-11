@@ -56,7 +56,7 @@
       <section id="levelScreen" class="screen screen--briefing" aria-live="polite">
         <p id="levelKicker" class="eyebrow">第 1 关</p>
         <h2 id="levelTitle">晨星航道</h2>
-        <p id="levelBrief">收集星核，穿过第一道巡航网。</p>
+        <p id="levelBrief" class="status-line">收集星核，穿过第一道巡航网。</p>
         <div class="brief-grid" aria-hidden="true">
           <div>
             <span>目标</span>
@@ -103,14 +103,14 @@
       <section id="gameOverScreen" class="screen screen--briefing" aria-live="polite">
         <p class="eyebrow">MISSION FAILED</p>
         <h2>Game Over</h2>
-        <p>航线已记录，重新校准后可继续挑战本关。</p>
+        <p class="status-line">航线已记录，重新校准后可继续挑战本关。</p>
         <button id="retryButton" class="primary-button" type="button">重试本关</button>
       </section>
 
       <section id="pauseScreen" class="screen screen--briefing" aria-live="polite">
         <p class="eyebrow">PAUSED</p>
         <h2>作战暂停</h2>
-        <p>调整呼吸，星门不会自己跑掉。</p>
+        <p class="status-line">调整呼吸，星门不会自己跑掉。</p>
         <button id="resumeButton" class="primary-button" type="button">继续作战</button>
         <button id="restartButton" class="secondary-button" type="button">重开本关</button>
       </section>
@@ -122,7 +122,7 @@
           <span></span>
         </div>
         <strong>Level Complete</strong>
-        <p id="clearText">星门正在展开</p>
+        <p id="clearText" class="status-line">星门正在展开</p>
       </div>
 
       <div id="finalGateOverlay" class="final-gate-overlay" aria-hidden="true">
@@ -184,6 +184,9 @@
       <button id="pulseButton" class="pulse-button pulse-button--hidden" type="button" aria-label="释放能量脉冲">
         <span>脉冲</span>
       </button>
+      <div id="joystick" class="joystick joystick--hidden" aria-hidden="true">
+        <span id="joystickKnob"></span>
+      </div>
     </main>
 
     <script src="scripts/game-01.js"></script>

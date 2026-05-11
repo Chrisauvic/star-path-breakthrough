@@ -59,6 +59,8 @@ const ids = [
   "skipFinalVideoButton",
   "clearText",
   "pulseButton",
+  "joystick",
+  "joystickKnob",
   "soundButton",
   "pauseButton",
   "tutorialButton",
@@ -111,6 +113,10 @@ elements.finalVideo.load = () => {};
 elements.playFinalVideoButton.hidden = true;
 elements.hud.classList = new ClassList("hud hud--hidden");
 elements.pulseButton.classList = new ClassList("pulse-button pulse-button--hidden");
+elements.joystick.classList = new ClassList("joystick joystick--hidden");
+elements.joystick.getBoundingClientRect = () => ({ left: 20, top: 500, width: 118, height: 118 });
+elements.joystick.setPointerCapture = () => {};
+elements.joystickKnob.style = {};
 elements.pauseButton.classList = new ClassList("pause-button pause-button--hidden");
 elements.soundButton.classList = new ClassList("sound-button");
 elements.gameCanvas.width = 720;
@@ -249,8 +255,24 @@ if (elements.hud.classList.contains("hud--hidden")) {
   throw new Error("HUD should be visible during gameplay.");
 }
 
+if (elements.joystick.classList.contains("joystick--hidden")) {
+  throw new Error("Joystick should be visible during gameplay.");
+}
+
 if (elements.pauseButton.classList.contains("pause-button--hidden")) {
   throw new Error("Pause button should be visible during gameplay.");
+}
+
+const playerXBeforeJoystick = vm.runInContext("state.player.x", context);
+elements.joystick.listeners.pointerdown({ pointerId: 7, clientX: 132, clientY: 559 });
+vm.runInContext("update(0.2, performance.now() + 200);", context);
+const playerXAfterJoystick = vm.runInContext("state.player.x", context);
+if (playerXAfterJoystick <= playerXBeforeJoystick) {
+  throw new Error("Joystick input should move the ship horizontally.");
+}
+elements.joystick.listeners.pointerup({ pointerId: 7 });
+if (vm.runInContext("state.joystickVector.x", context) !== 0) {
+  throw new Error("Joystick should reset after release.");
 }
 
 if (!audioPlayLog.some((entry) => entry.src.includes("level-1-simple-bgm.ogg") && entry.loop)) {

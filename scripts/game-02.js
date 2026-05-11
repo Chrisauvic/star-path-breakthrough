@@ -59,6 +59,7 @@ function showScreen(name) {
   hud.root.classList.toggle("hud--hidden", !isGameplay);
   ui.pulseButton.classList.toggle("pulse-button--hidden", !isGameplay);
   ui.pauseButton.classList.toggle("pause-button--hidden", !isGameplay);
+  ui.joystick.classList.toggle("joystick--hidden", !isGameplay);
 }
 
 function initBackdrop() {
@@ -267,6 +268,11 @@ function prepareLevel(index) {
   state.clearTimer = 0;
   state.finalGateTimer = 0;
   state.result = null;
+  state.joystickActive = false;
+  state.joystickPointerId = null;
+  state.joystickVector.x = 0;
+  state.joystickVector.y = 0;
+  if (ui.joystickKnob) ui.joystickKnob.style.transform = "translate(-50%, -50%)";
   state.hazards = [];
   state.mines = [];
   state.gates = [];

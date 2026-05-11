@@ -90,37 +90,47 @@ function loop(time) {
   requestAnimationFrame(loop);
 }
 
-function pointerToCanvas(event) {
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: ((event.clientX - rect.left) / rect.width) * canvas.width,
-    y: ((event.clientY - rect.top) / rect.height) * canvas.height,
-  };
+function updateJoystick(event) {
+  const rect = ui.joystick.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const maxDistance = rect.width * 0.34;
+  const dx = event.clientX - centerX;
+  const dy = event.clientY - centerY;
+  const distance = Math.hypot(dx, dy);
+  const clamped = Math.min(maxDistance, distance);
+  const angle = Math.atan2(dy, dx);
+  const knobX = Math.cos(angle) * clamped;
+  const knobY = Math.sin(angle) * clamped;
+  const strength = maxDistance > 0 ? clamped / maxDistance : 0;
+  state.joystickVector.x = Math.cos(angle) * strength;
+  state.joystickVector.y = Math.sin(angle) * strength;
+  ui.joystickKnob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
 }
 
-canvas.addEventListener("pointerdown", (event) => {
+function resetJoystick() {
+  state.joystickActive = false;
+  state.joystickPointerId = null;
+  state.joystickVector.x = 0;
+  state.joystickVector.y = 0;
+  ui.joystickKnob.style.transform = "translate(-50%, -50%)";
+}
+
+ui.joystick.addEventListener("pointerdown", (event) => {
   if (state.mode !== "playing") return;
-  state.pointerActive = true;
-  canvas.setPointerCapture(event.pointerId);
-  const point = pointerToCanvas(event);
-  state.player.targetX = point.x;
-  state.player.targetY = point.y;
+  state.joystickActive = true;
+  state.joystickPointerId = event.pointerId;
+  ui.joystick.setPointerCapture(event.pointerId);
+  updateJoystick(event);
 });
 
-canvas.addEventListener("pointermove", (event) => {
-  if (!state.pointerActive || state.mode !== "playing") return;
-  const point = pointerToCanvas(event);
-  state.player.targetX = point.x;
-  state.player.targetY = point.y;
+ui.joystick.addEventListener("pointermove", (event) => {
+  if (!state.joystickActive || state.joystickPointerId !== event.pointerId || state.mode !== "playing") return;
+  updateJoystick(event);
 });
 
-canvas.addEventListener("pointerup", () => {
-  state.pointerActive = false;
-});
-
-canvas.addEventListener("pointercancel", () => {
-  state.pointerActive = false;
-});
+ui.joystick.addEventListener("pointerup", resetJoystick);
+ui.joystick.addEventListener("pointercancel", resetJoystick);
 
 document.getElementById("startButton").addEventListener("click", () => {
   unlockAudio();

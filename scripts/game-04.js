@@ -203,8 +203,11 @@ function update(dt, time) {
     state.powerTimer = 1 / level.powerRate;
   }
 
-  player.x += (player.targetX - player.x) * Math.min(1, dt * 12);
-  player.y += (player.targetY - player.y) * Math.min(1, dt * 12);
+  const joystickSpeed = 520 + state.levelIndex * 18;
+  player.x += state.joystickVector.x * joystickSpeed * dt;
+  player.y += state.joystickVector.y * joystickSpeed * dt;
+  player.targetX = player.x;
+  player.targetY = player.y;
   player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
   player.y = Math.max(178, Math.min(canvas.height - player.radius, player.y));
 

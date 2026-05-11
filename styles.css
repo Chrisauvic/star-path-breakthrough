@@ -92,6 +92,11 @@ button {
   backdrop-filter: blur(12px);
 }
 
+.screen--briefing .eyebrow,
+.screen--result .eyebrow {
+  font-size: 14px;
+}
+
 .screen--result {
   background:
     linear-gradient(180deg, rgba(5, 8, 20, 0.55), rgba(5, 8, 20, 0.9)),
@@ -304,11 +309,12 @@ button {
 
 .eyebrow {
   color: var(--ui-primary);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 900;
   letter-spacing: 0;
   text-transform: uppercase;
   font-family: var(--font-data);
+  text-shadow: 0 0 14px rgba(89, 214, 255, 0.42);
 }
 
 h1,
@@ -344,6 +350,21 @@ p {
   font-size: 15px;
   line-height: 1.55;
   font-family: var(--font-ui);
+}
+
+.status-line {
+  display: inline-flex;
+  width: fit-content;
+  max-width: min(100%, 420px);
+  padding: 8px 11px;
+  border-left: 2px solid rgba(89, 214, 255, 0.75);
+  border-radius: 5px;
+  background: linear-gradient(90deg, rgba(89, 214, 255, 0.14), rgba(5, 8, 20, 0.26));
+  color: #d8e0e6;
+  font-family: var(--font-data);
+  font-size: 13px;
+  line-height: 1.45;
+  text-shadow: 0 0 12px rgba(5, 8, 20, 0.88);
 }
 
 .mission-strip,
@@ -504,7 +525,8 @@ p {
 .clear-overlay p {
   position: absolute;
   bottom: 25%;
-  color: var(--text-soft);
+  left: 50%;
+  translate: -50% 0;
 }
 
 .clear-gate {
@@ -1024,6 +1046,60 @@ p {
 }
 
 .pulse-button--hidden {
+  display: none;
+}
+
+.joystick {
+  position: absolute;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: calc(env(safe-area-inset-bottom) + 18px);
+  z-index: 3;
+  width: 118px;
+  height: 118px;
+  border: 1px solid rgba(89, 214, 255, 0.34);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(247, 251, 255, 0.12) 0 28%, transparent 30%),
+    radial-gradient(circle, rgba(89, 214, 255, 0.18), rgba(5, 8, 20, 0.34));
+  box-shadow: 0 0 24px rgba(89, 214, 255, 0.18), inset 0 0 18px rgba(247, 251, 255, 0.12);
+  touch-action: none;
+  user-select: none;
+}
+
+.joystick::before,
+.joystick::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgba(247, 251, 255, 0.16);
+  translate: -50% -50%;
+}
+
+.joystick::before {
+  width: 62%;
+  height: 1px;
+}
+
+.joystick::after {
+  width: 1px;
+  height: 62%;
+}
+
+.joystick span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(247, 251, 255, 0.44);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(247, 251, 255, 0.52), rgba(89, 214, 255, 0.36) 42%, rgba(5, 8, 20, 0.42));
+  box-shadow: 0 0 18px rgba(89, 214, 255, 0.34), inset 0 0 12px rgba(247, 251, 255, 0.24);
+  transform: translate(-50%, -50%);
+}
+
+.joystick--hidden {
   display: none;
 }
 
