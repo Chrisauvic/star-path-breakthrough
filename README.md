@@ -26,7 +26,9 @@ node server.js
 - 三类道具：能量碎片、护盾、时间晶体
 - Canvas 动画、粒子反馈、屏幕震动和通关星门动画
 - Web Audio 音效：点击、收集、受伤、通关、脉冲和按关卡变化的背景音乐
-- 本地轻量科技背景音乐循环：`assets/audio/tech-loop.wav`
+- 每关独立背景音乐：`level-1-simple-bgm.ogg`、`level-2-electro-loop.ogg`、`level-3-bluebeat.ogg`、`level-4-tense-future.ogg`、`level-5-last-stand.ogg`
+- 过关动画音乐：`clear-winneris.ogg`
+- 背景音乐来自 OpenGameArt，均为 CC0 资源；胜利/失败短乐句为本项目生成音效
 - 全通关视频位：将视频保存为 `assets/video/final-clear.mp4` 后，最终星门动画结束会自动播放
 - 已接入生成图片素材：首屏、关卡、失败、通关背景和图集精灵
 - 手机竖屏比例和安全区适配
@@ -45,4 +47,5 @@ node server.js
 Get-ChildItem scripts/game-*.js | ForEach-Object { node --check $_.FullName }
 node --check server.js
 node test-smoke.js
+node test-review.js
 ```

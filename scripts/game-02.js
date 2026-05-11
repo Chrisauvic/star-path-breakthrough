@@ -1,22 +1,16 @@
 let audioContext;
-let ambientMusic;
 let musicTrack;
+let musicScene;
+let sceneCue;
+const audioCache = {};
 let lastFrameTime = 0;
 
-const levelMusic = [
-  { bass: [74, 0, 111, 0], lead: [296, 370, 444, 370, 296, 222, 296, 370], color: "#59d6ff", filter: 1800, volume: 0.016 },
-  { bass: [82, 123, 0, 164], lead: [329, 493, 411, 493, 658, 493, 411, 329], color: "#ff4e80", filter: 2100, volume: 0.015 },
-  { bass: [69, 0, 103, 138], lead: [276, 345, 414, 552, 414, 345, 276, 207], color: "#c88dff", filter: 1700, volume: 0.014 },
-  { bass: [92, 0, 138, 184], lead: [368, 552, 460, 690, 552, 460, 368, 276], color: "#8dff8a", filter: 2300, volume: 0.015 },
-  { bass: [55, 110, 0, 165], lead: [330, 440, 550, 660, 880, 660, 550, 440], color: "#ffcf5a", filter: 2600, volume: 0.0165 },
-];
-
 const musicProfiles = [
-  { volume: 0.17, rate: 0.96, start: 0 },
-  { volume: 0.18, rate: 1.0, start: 18 },
-  { volume: 0.17, rate: 1.04, start: 36 },
-  { volume: 0.19, rate: 1.08, start: 54 },
-  { volume: 0.2, rate: 1.12, start: 72 },
+  { volume: 0.29, rate: 1.0, start: 0 },
+  { volume: 0.27, rate: 1.0, start: 0 },
+  { volume: 0.25, rate: 1.0, start: 0 },
+  { volume: 0.24, rate: 1.0, start: 0 },
+  { volume: 0.42, rate: 1.0, start: 0 },
 ];
 
 function loadImage(src) {
@@ -35,7 +29,18 @@ function loadAssets() {
     assets.backgrounds = backgrounds;
     assets.loaded = true;
   });
+  preloadAudioAssets();
   preloadFinalVideo();
+}
+
+function preloadAudioAssets() {
+  if (typeof Audio === "undefined") return;
+  [...assetUrls.audio.levelTracks, assetUrls.audio.clear, assetUrls.audio.victory, assetUrls.audio.defeat].forEach((src) => {
+    const audio = new Audio(src);
+    audio.preload = "auto";
+    audioCache[src] = audio;
+    audio.load();
+  });
 }
 
 function preloadFinalVideo() {
@@ -74,21 +79,19 @@ function initBackdrop() {
 
 function playTone(type) {
   if (state.muted) return;
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
+  unlockAudio();
 
   const now = audioContext.currentTime;
   const oscillator = audioContext.createOscillator();
   const gain = audioContext.createGain();
   const filter = audioContext.createBiquadFilter();
   const presets = {
-    tap: [360, 520, 0.08, "triangle", 0.08],
-    collect: [620, 1080, 0.13, "sine", 0.12],
-    shard: [760, 520, 0.1, "square", 0.08],
-    pulse: [180, 1260, 0.32, "sawtooth", 0.14],
-    hit: [170, 70, 0.22, "sawtooth", 0.1],
-    win: [420, 980, 0.55, "triangle", 0.14],
+    tap: [280, 420, 0.07, "triangle", 0.045],
+    collect: [430, 720, 0.12, "sine", 0.075],
+    shard: [520, 360, 0.09, "triangle", 0.05],
+    pulse: [150, 680, 0.28, "triangle", 0.09],
+    hit: [150, 62, 0.2, "triangle", 0.075],
+    win: [520, 780, 0.16, "sine", 0.055],
   };
   const [from, to, duration, wave, volume] = presets[type] || presets.tap;
 
@@ -96,7 +99,7 @@ function playTone(type) {
   oscillator.frequency.setValueAtTime(from, now);
   oscillator.frequency.exponentialRampToValueAtTime(to, now + duration);
   filter.type = "lowpass";
-  filter.frequency.value = type === "hit" ? 700 : 2600;
+  filter.frequency.value = type === "hit" ? 520 : 1450;
   gain.gain.setValueAtTime(volume, now);
   gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
   oscillator.connect(filter);
@@ -106,34 +109,83 @@ function playTone(type) {
   oscillator.stop(now + duration);
 }
 
+function playClearCue() {
+  if (state.muted) return;
+  unlockAudio();
+  const now = audioContext.currentTime;
+  const notes = [440, 554, 659, 880];
+  const master = audioContext.createGain();
+  master.gain.setValueAtTime(0.001, now);
+  master.gain.exponentialRampToValueAtTime(0.16, now + 0.04);
+  master.gain.exponentialRampToValueAtTime(0.001, now + 1.05);
+  master.connect(audioContext.destination);
+
+  notes.forEach((frequency, index) => {
+    const start = now + index * 0.13;
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.exponentialRampToValueAtTime(0.2, start + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.42);
+    oscillator.connect(gain);
+    gain.connect(master);
+    oscillator.start(start);
+    oscillator.stop(start + 0.46);
+  });
+}
+
+function unlockAudio() {
+  if (!audioContext && (window.AudioContext || window.webkitAudioContext)) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioContext && audioContext.state === "suspended" && audioContext.resume) {
+    audioContext.resume();
+  }
+}
+
 function ensureAmbientMusic() {
   if (state.muted) return;
-  if (ensureMusicTrack()) return;
-  ensureSynthMusic();
+  unlockAudio();
+  stopSceneCue();
+  ensureMusicTrack();
 }
 
 function ensureMusicTrack() {
   if (typeof Audio === "undefined") return false;
-  if (!musicTrack) {
-    musicTrack = new Audio(assetUrls.music);
+  const profile = musicProfiles[state.levelIndex % musicProfiles.length];
+  const src = assetUrls.audio.levelTracks[state.levelIndex] || assetUrls.music;
+  if (!musicTrack || musicScene !== src) {
+    if (musicTrack) musicTrack.pause();
+    musicTrack = new Audio(src);
     musicTrack.loop = true;
     musicTrack.preload = "auto";
     musicTrack.failed = false;
+    musicScene = src;
     musicTrack.addEventListener("error", () => {
       musicTrack.failed = true;
-      ensureSynthMusic();
     });
   }
   if (musicTrack.failed) return false;
-  if (ambientMusic) stopSynthMusic(0.08);
 
-  const profile = musicProfiles[state.levelIndex % musicProfiles.length];
   musicTrack.volume = profile.volume;
   musicTrack.playbackRate = profile.rate;
   if (musicTrack.levelIndex !== state.levelIndex) {
     musicTrack.levelIndex = state.levelIndex;
+    musicTrack.currentTime = 0;
     if (Number.isFinite(musicTrack.duration) && musicTrack.duration > profile.start + 5) {
       musicTrack.currentTime = profile.start;
+    } else {
+      musicTrack.addEventListener(
+        "loadedmetadata",
+        () => {
+          if (musicTrack && musicTrack.levelIndex === state.levelIndex && musicTrack.duration > profile.start + 5) {
+            musicTrack.currentTime = profile.start;
+          }
+        },
+        { once: true },
+      );
     }
   }
 
@@ -141,76 +193,41 @@ function ensureMusicTrack() {
   if (playPromise && typeof playPromise.catch === "function") {
     playPromise.catch(() => {
       musicTrack.failed = true;
-      ensureSynthMusic();
     });
   }
   return true;
 }
 
-function ensureSynthMusic() {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (ambientMusic && ambientMusic.levelIndex === state.levelIndex) return;
-  if (ambientMusic) stopSynthMusic(0.08);
-
-  const preset = levelMusic[state.levelIndex % levelMusic.length];
-  const now = audioContext.currentTime;
-  const gain = audioContext.createGain();
-  gain.gain.setValueAtTime(0.001, now);
-  gain.gain.exponentialRampToValueAtTime(preset.volume, now + 0.4);
-  gain.connect(audioContext.destination);
-
-  const playStep = () => {
-    if (!ambientMusic || ambientMusic.levelIndex !== state.levelIndex || state.muted) return;
-    const beat = 0.24;
-    const start = audioContext.currentTime + 0.02;
-    preset.lead.forEach((frequency, index) => {
-      playMusicNote(frequency, index % 2 ? "triangle" : "sine", start + index * beat, 0.1, 0.22, gain, preset.filter);
-    });
-    preset.bass.forEach((frequency, index) => {
-      if (frequency > 0) playMusicNote(frequency, "triangle", start + index * beat * 2, 0.18, 0.34, gain, 620);
-    });
-  };
-
-  ambientMusic = {
-    levelIndex: state.levelIndex,
-    gain,
-    timer: setInterval(playStep, 1920),
-  };
-  playStep();
-}
-
-function stopAmbientMusic(fade = 0.12) {
+function stopAmbientMusic() {
   if (musicTrack) musicTrack.pause();
-  stopSynthMusic(fade);
 }
 
-function stopSynthMusic(fade = 0.12) {
-  if (!ambientMusic) return;
-  const now = audioContext.currentTime;
-  clearInterval(ambientMusic.timer);
-  ambientMusic.gain.gain.setValueAtTime(ambientMusic.gain.gain.value, now);
-  ambientMusic.gain.gain.exponentialRampToValueAtTime(0.001, now + fade);
-  ambientMusic = null;
+function stopSceneCue() {
+  if (!sceneCue) return;
+  sceneCue.pause();
+  sceneCue = null;
 }
 
-function playMusicNote(frequency, wave, start, duration, volume, destination, filterFrequency) {
-  const oscillator = audioContext.createOscillator();
-  const filter = audioContext.createBiquadFilter();
-  const gain = audioContext.createGain();
-  oscillator.type = wave;
-  oscillator.frequency.setValueAtTime(frequency, start);
-  filter.type = "lowpass";
-  filter.frequency.value = filterFrequency;
-  gain.gain.setValueAtTime(0.001, start);
-  gain.gain.exponentialRampToValueAtTime(volume, start + 0.018);
-  gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
-  oscillator.connect(filter);
-  filter.connect(gain);
-  gain.connect(destination);
-  oscillator.start(start);
-  oscillator.stop(start + duration + 0.03);
+function playSceneCue(scene) {
+  if (state.muted || typeof Audio === "undefined") return false;
+  const src = assetUrls.audio[scene];
+  if (!src) return false;
+  unlockAudio();
+  stopSceneCue();
+  sceneCue = new Audio(src);
+  sceneCue.loop = false;
+  sceneCue.preload = "auto";
+  sceneCue.currentTime = 0;
+  sceneCue.volume = scene === "clear" ? 0.48 : scene === "victory" ? 0.42 : 0.32;
+  const playPromise = sceneCue.play();
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => {
+      sceneCue = null;
+      if (scene === "victory") playTone("win");
+      if (scene === "defeat") playTone("hit");
+    });
+  }
+  return true;
 }
 
 function updateHud() {

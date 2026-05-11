@@ -123,10 +123,10 @@ function setMode(mode) {
 }
 
 function gradeFor(points) {
-  if (points >= 1500) return ["S", "完美突破，舰队会记住这条航线。"];
-  if (points >= 1150) return ["A", "高质量通关，节奏和路线都很稳。"];
-  if (points >= 850) return ["B", "任务完成，仍有提升空间。"];
-  return ["C", "星门已打开，但护盾损耗偏高。"];
+  if (points >= 1500) return ["S", "航线评级 S / 星门稳定"];
+  if (points >= 1150) return ["A", "航线评级 A / 节奏良好"];
+  if (points >= 850) return ["B", "航线评级 B / 任务完成"];
+  return ["C", "航线评级 C / 待重新校准"];
 }
 
 function calculateResult() {
@@ -154,7 +154,7 @@ function showResult() {
   state.result = calculateResult();
   ui.resultTitle.textContent = `${state.result.levelName} 完成`;
   ui.resultRank.textContent = state.result.rank;
-  ui.resultScore.textContent = String(state.result.total);
+  animateResultScore(state.result.total);
   ui.resultCombo.textContent = String(state.result.bestCombo);
   ui.resultLives.textContent = String(state.result.lives);
   ui.resultTime.textContent = `${state.result.time.toFixed(1)}s`;
@@ -164,6 +164,21 @@ function showResult() {
   ui.finalGateOverlay.classList.remove("final-gate-overlay--active");
   ui.finalVideoOverlay.classList.remove("final-video-overlay--active");
   setMode("result");
+}
+
+function animateResultScore(target) {
+  const duration = 900;
+  const start = performance.now();
+  ui.resultScore.textContent = "0";
+  const tick = (time) => {
+    if (state.mode !== "result") return;
+    const progress = Math.min(1, (time - start) / duration);
+    const eased = 1 - (1 - progress) ** 3;
+    ui.resultScore.textContent = String(Math.round(target * eased));
+    ui.resultScore.classList.toggle("score-rolling", progress < 1);
+    if (progress < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 }
 
 function showFinalResult() {
@@ -181,6 +196,7 @@ function playFinalVideo() {
   video.muted = state.muted;
   video.volume = 1;
   video.controls = false;
+  video.style.visibility = "hidden";
   ui.finalVideoOverlay.classList.add("final-video-overlay--active");
   ui.finalVideoOverlay.classList.remove("final-video-overlay--needs-tap");
   ui.finalVideoOverlay.classList.add("final-video-overlay--loading");
@@ -194,12 +210,14 @@ function playFinalVideo() {
     ui.finalVideoOverlay.classList.remove("final-video-overlay--active");
     ui.finalVideoOverlay.classList.remove("final-video-overlay--needs-tap");
     ui.finalVideoOverlay.classList.remove("final-video-overlay--loading");
+    video.style.visibility = "hidden";
     video.removeEventListener("ended", finish);
     video.removeEventListener("error", finish);
     video.removeEventListener("playing", reveal);
     showResult();
   };
   const reveal = () => {
+    video.style.visibility = "visible";
     ui.finalVideoOverlay.classList.remove("final-video-overlay--loading");
     ui.finalVideoOverlay.classList.add("final-video-overlay--active");
   };
@@ -211,6 +229,7 @@ function playFinalVideo() {
   if (playPromise && typeof playPromise.catch === "function") {
     playPromise.catch(() => {
       video.muted = true;
+      video.style.visibility = "hidden";
       ui.finalVideoOverlay.classList.remove("final-video-overlay--loading");
       ui.finalVideoOverlay.classList.add("final-video-overlay--active");
       ui.finalVideoOverlay.classList.add("final-video-overlay--needs-tap");
@@ -236,6 +255,7 @@ function completeLevel() {
   state.clearTimer = 2.35;
   state.flash = 1;
   stopAmbientMusic(0.2);
+  if (!playSceneCue("clear")) playClearCue();
   state.energy = Math.min(100, state.energy + 20);
   state.hazards = [];
   state.mines = [];
@@ -248,5 +268,4 @@ function completeLevel() {
   ui.clearOverlay.classList.add("clear-overlay--active");
   showScreen(null);
   updateHud();
-  playTone("win");
 }

@@ -140,6 +140,34 @@ const fakeAudioNode = {
   gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
 };
 
+const audioPlayLog = [];
+const oscillatorLog = [];
+
+function FakeAudio(src = "") {
+  this.src = src;
+  this.loop = false;
+  this.preload = "";
+  this.failed = false;
+  this.levelIndex = undefined;
+  this.currentTime = 0;
+  this.duration = src.includes("explore") ? 80 : src.includes("boss") ? 40 : 6;
+  this.volume = 1;
+  this.playbackRate = 1;
+  this.listeners = {};
+}
+
+FakeAudio.prototype.addEventListener = function addEventListener(type, handler) {
+  this.listeners[type] = handler;
+};
+FakeAudio.prototype.load = function load() {
+  if (this.listeners.loadedmetadata) this.listeners.loadedmetadata();
+};
+FakeAudio.prototype.play = function play() {
+  audioPlayLog.push({ src: this.src, loop: this.loop, volume: this.volume, playbackRate: this.playbackRate, currentTime: this.currentTime });
+  return Promise.resolve();
+};
+FakeAudio.prototype.pause = function pause() {};
+
 const context = {
   console,
   performance: { now: () => 1 },
@@ -148,11 +176,20 @@ const context = {
     return 1;
   },
   clearInterval() {},
+  setTimeout(handler) {
+    handler();
+    return 1;
+  },
+  clearTimeout() {},
   window: {
     AudioContext: function AudioContext() {
       return {
         currentTime: 0,
-        createOscillator: () => ({ ...fakeAudioNode }),
+        createOscillator: () => {
+          const node = { ...fakeAudioNode, type: "" };
+          node.start = () => oscillatorLog.push({ type: node.type });
+          return node;
+        },
         createGain: () => ({ ...fakeAudioNode }),
         createBiquadFilter: () => ({ ...fakeAudioNode }),
         destination: {},
@@ -166,6 +203,7 @@ const context = {
       return elements[id];
     },
   },
+  Audio: FakeAudio,
 };
 
 context.window.webkitAudioContext = context.window.AudioContext;
@@ -215,6 +253,10 @@ if (elements.pauseButton.classList.contains("pause-button--hidden")) {
   throw new Error("Pause button should be visible during gameplay.");
 }
 
+if (!audioPlayLog.some((entry) => entry.src.includes("level-1-simple-bgm.ogg") && entry.loop)) {
+  throw new Error("Exploration background music should start immediately when level 1 starts.");
+}
+
 elements.pauseButton.click();
 
 if (!elements.pauseScreen.classList.contains("screen--active")) {
@@ -247,7 +289,21 @@ if (!elements.resultRank.textContent) {
   throw new Error("Result rank should be populated.");
 }
 
+vm.runInContext("prepareLevel(levels.length - 1); startLevel();", context);
+
+if (!audioPlayLog.some((entry) => entry.src.includes("level-5-last-stand.ogg") && entry.loop)) {
+  throw new Error("Boss background music should start when the final level starts.");
+}
+
 vm.runInContext("prepareLevel(levels.length - 1); completeLevel(); state.clearTimer = 0; update(0.016, performance.now());", context);
+
+if (!audioPlayLog.some((entry) => entry.src.includes("clear-winneris.ogg") && !entry.loop)) {
+  throw new Error("Clear animation should play the reviewed sourced victory music cue.");
+}
+
+if (audioPlayLog.some((entry) => entry.src.includes("victory-sting.wav"))) {
+  throw new Error("Generated victory WAV should not play during the clear animation because it can create a hum.");
+}
 
 if (!elements.finalGateOverlay.classList.contains("final-gate-overlay--active")) {
   throw new Error("Final stargate animation should open after clearing every level.");
@@ -289,6 +345,10 @@ if (!elements.finalVideoOverlay.classList.contains("final-video-overlay--loading
   throw new Error("Final video should show a non-black loading overlay before the first frame.");
 }
 
+if (elements.finalVideo.style.visibility !== "hidden") {
+  throw new Error("Final video element should stay hidden until the first playable frame to avoid black flashes.");
+}
+
 vm.runInContext("update(0.016, performance.now()); update(0.016, performance.now());", context);
 
 if (finalVideoPlayCount !== 1) {
@@ -300,6 +360,10 @@ if (!elements.finalVideo.listeners.playing) {
 }
 
 elements.finalVideo.listeners.playing();
+
+if (elements.finalVideo.style.visibility !== "visible") {
+  throw new Error("Final video element should become visible when playback starts.");
+}
 
 if (!elements.finalVideoOverlay.classList.contains("final-video-overlay--active")) {
   throw new Error("Final video overlay should become active after playback starts.");

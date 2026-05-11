@@ -123,17 +123,23 @@ canvas.addEventListener("pointercancel", () => {
 });
 
 document.getElementById("startButton").addEventListener("click", () => {
+  unlockAudio();
   playTone("tap");
   prepareLevel(0);
   setMode("level");
 });
 
-document.getElementById("levelButton").addEventListener("click", startLevel);
+document.getElementById("levelButton").addEventListener("click", () => {
+  unlockAudio();
+  startLevel();
+});
 ui.tutorialButton.addEventListener("click", () => {
+  unlockAudio();
   setMode("tutorial");
   playTone("tap");
 });
 ui.tutorialBackButton.addEventListener("click", () => {
+  unlockAudio();
   setMode("start");
   playTone("tap");
 });
@@ -141,11 +147,13 @@ ui.pulseButton.addEventListener("click", activatePulse);
 ui.pauseButton.addEventListener("click", pauseGame);
 ui.resumeButton.addEventListener("click", resumeGame);
 ui.restartButton.addEventListener("click", () => {
+  unlockAudio();
   prepareLevel(state.levelIndex);
   setMode("level");
   playTone("tap");
 });
 ui.soundButton.addEventListener("click", () => {
+  unlockAudio();
   state.muted = !state.muted;
   ui.soundButton.classList.toggle("sound-button--muted", state.muted);
   ui.soundButton.textContent = state.muted ? "×" : "♪";
@@ -157,6 +165,7 @@ ui.soundButton.addEventListener("click", () => {
 });
 
 ui.nextButton.addEventListener("click", () => {
+  unlockAudio();
   const next = state.levelIndex + 1;
   prepareLevel(next >= levels.length ? 0 : next);
   setMode("level");
@@ -167,8 +176,8 @@ ui.playFinalVideoButton.addEventListener("click", () => {
   if (!ui.finalVideo) return;
   ui.finalVideo.muted = false;
   ui.finalVideo.volume = 1;
-  ui.finalVideoOverlay.classList.remove("final-video-overlay--needs-tap");
   ui.playFinalVideoButton.hidden = true;
+  ui.finalVideoOverlay.classList.add("final-video-overlay--loading");
   const playPromise = ui.finalVideo.play();
   if (playPromise && typeof playPromise.catch === "function") {
     playPromise.catch(() => {
@@ -186,6 +195,7 @@ ui.skipFinalVideoButton.addEventListener("click", () => {
 });
 
 document.getElementById("retryButton").addEventListener("click", () => {
+  unlockAudio();
   prepareLevel(state.levelIndex);
   setMode("level");
   playTone("tap");

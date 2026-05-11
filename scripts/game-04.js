@@ -2,8 +2,9 @@ function gameOver() {
   state.mode = "gameOver";
   state.combo = 0;
   state.flash = 0.8;
+  stopAmbientMusic(0.18);
+  playSceneCue("defeat");
   showScreen("gameOver");
-  playTone("hit");
 }
 
 function collectCore(core) {

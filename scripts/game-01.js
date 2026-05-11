@@ -137,7 +137,19 @@ const assetUrls = {
   fail: "assets/optimized/bg-fail.jpg",
   clear: "assets/optimized/bg-clear.jpg",
   sprites: "assets/optimized/ui-spritesheet-game.png",
-  music: "assets/audio/tech-loop.wav",
+  music: "assets/audio/level-1-simple-bgm.ogg",
+  audio: {
+    levelTracks: [
+      "assets/audio/level-1-simple-bgm.ogg",
+      "assets/audio/level-2-electro-loop.ogg",
+      "assets/audio/level-3-bluebeat.ogg",
+      "assets/audio/level-4-tense-future.ogg",
+      "assets/audio/level-5-last-stand.ogg",
+    ],
+    clear: "assets/audio/clear-winneris.ogg",
+    victory: "assets/audio/victory-sting.wav",
+    defeat: "assets/audio/defeat-sting.wav",
+  },
   finalVideo: "assets/video/final-clear.mp4",
   levelBackgrounds: [
     "assets/optimized/bg-level-1.jpg",
