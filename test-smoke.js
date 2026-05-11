@@ -367,6 +367,14 @@ if (!elements.finalVideoOverlay.classList.contains("final-video-overlay--loading
   throw new Error("Final video should show a non-black loading overlay before the first frame.");
 }
 
+if (!elements.finalVideoOverlay.classList.contains("final-video-overlay--stargate")) {
+  throw new Error("Final video should keep the stargate background instead of dropping to black.");
+}
+
+if (!elements.finalGateOverlay.classList.contains("final-gate-overlay--active")) {
+  throw new Error("Final stargate backdrop should remain active while the video is preparing.");
+}
+
 if (elements.finalVideo.style.visibility !== "hidden") {
   throw new Error("Final video element should stay hidden until the first playable frame to avoid black flashes.");
 }
@@ -403,6 +411,14 @@ elements.finalVideo.listeners.ended();
 
 if (!elements.resultScreen.classList.contains("screen--active")) {
   throw new Error("Result screen should appear after the final video ends.");
+}
+
+if (elements.resultScore.classList.contains("score-rolling")) {
+  throw new Error("Post-video replay result should not use the rolling score animation.");
+}
+
+if (elements.resultScore.textContent !== vm.runInContext("String(state.result.total)", context)) {
+  throw new Error("Post-video replay result score should appear immediately after the video.");
 }
 
 console.log("Smoke test passed: boot, gameplay, clear animation, final video, final stargate, and result scoring are valid.");

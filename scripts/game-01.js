@@ -157,8 +157,8 @@ const assetUrls = {
     "assets/optimized/bg-level-1.jpg",
     "assets/optimized/bg-level-2.jpg",
     "assets/optimized/bg-level-3.jpg",
-    "assets/optimized/bg-level-2.jpg",
-    "assets/optimized/bg-level-3.jpg",
+    "assets/optimized/bg-level-4.jpg",
+    "assets/optimized/bg-level-5.jpg",
   ],
 };
 

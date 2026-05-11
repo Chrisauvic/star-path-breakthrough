@@ -150,11 +150,13 @@ function calculateResult() {
   };
 }
 
-function showResult() {
+function showResult(options = {}) {
+  const shouldAnimateScore = options.animateScore !== false;
   state.result = calculateResult();
   ui.resultTitle.textContent = `${state.result.levelName} 完成`;
   ui.resultRank.textContent = state.result.rank;
-  animateResultScore(state.result.total);
+  if (shouldAnimateScore) animateResultScore(state.result.total);
+  else setResultScore(state.result.total);
   ui.resultCombo.textContent = String(state.result.bestCombo);
   ui.resultLives.textContent = String(state.result.lives);
   ui.resultTime.textContent = `${state.result.time.toFixed(1)}s`;
@@ -163,7 +165,14 @@ function showResult() {
   ui.clearOverlay.classList.remove("clear-overlay--active");
   ui.finalGateOverlay.classList.remove("final-gate-overlay--active");
   ui.finalVideoOverlay.classList.remove("final-video-overlay--active");
+  ui.finalVideoOverlay.classList.remove("final-video-overlay--loading");
+  ui.finalVideoOverlay.classList.remove("final-video-overlay--stargate");
   setMode("result");
+}
+
+function setResultScore(target) {
+  ui.resultScore.textContent = String(target);
+  ui.resultScore.classList.remove("score-rolling");
 }
 
 function animateResultScore(target) {
@@ -197,33 +206,41 @@ function playFinalVideo() {
   video.volume = 1;
   video.controls = false;
   video.style.visibility = "hidden";
+  ui.finalGateOverlay.classList.add("final-gate-overlay--active");
   ui.finalVideoOverlay.classList.add("final-video-overlay--active");
+  ui.finalVideoOverlay.classList.add("final-video-overlay--stargate");
   ui.finalVideoOverlay.classList.remove("final-video-overlay--needs-tap");
   ui.finalVideoOverlay.classList.add("final-video-overlay--loading");
   ui.playFinalVideoButton.hidden = true;
 
   let finished = false;
-  const finish = () => {
-    if (finished) return;
-    finished = true;
-    video.pause();
-    ui.finalVideoOverlay.classList.remove("final-video-overlay--active");
-    ui.finalVideoOverlay.classList.remove("final-video-overlay--needs-tap");
-    ui.finalVideoOverlay.classList.remove("final-video-overlay--loading");
-    video.style.visibility = "hidden";
-    video.removeEventListener("ended", finish);
-    video.removeEventListener("error", finish);
-    video.removeEventListener("playing", reveal);
-    showResult();
-  };
   const reveal = () => {
     video.style.visibility = "visible";
     ui.finalVideoOverlay.classList.remove("final-video-overlay--loading");
     ui.finalVideoOverlay.classList.add("final-video-overlay--active");
   };
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    video.pause();
+    ui.finalGateOverlay.classList.remove("final-gate-overlay--active");
+    ui.finalVideoOverlay.classList.remove("final-video-overlay--active");
+    ui.finalVideoOverlay.classList.remove("final-video-overlay--needs-tap");
+    ui.finalVideoOverlay.classList.remove("final-video-overlay--loading");
+    ui.finalVideoOverlay.classList.remove("final-video-overlay--stargate");
+    video.style.visibility = "hidden";
+    video.removeEventListener("ended", finish);
+    video.removeEventListener("error", finish);
+    video.removeEventListener("loadeddata", reveal);
+    video.removeEventListener("canplay", reveal);
+    video.removeEventListener("playing", reveal);
+    showResult({ animateScore: false });
+  };
 
   video.addEventListener("ended", finish, { once: true });
   video.addEventListener("error", finish, { once: true });
+  video.addEventListener("loadeddata", reveal, { once: true });
+  video.addEventListener("canplay", reveal, { once: true });
   video.addEventListener("playing", reveal, { once: true });
   const playPromise = video.play();
   if (playPromise && typeof playPromise.catch === "function") {

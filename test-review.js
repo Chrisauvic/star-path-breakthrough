@@ -84,6 +84,8 @@ const requiredAssets = [
   "assets/optimized/bg-level-1.jpg",
   "assets/optimized/bg-level-2.jpg",
   "assets/optimized/bg-level-3.jpg",
+  "assets/optimized/bg-level-4.jpg",
+  "assets/optimized/bg-level-5.jpg",
   "assets/optimized/bg-clear.jpg",
   "assets/optimized/bg-fail.jpg",
   "assets/optimized/ui-spritesheet-game.png",
@@ -142,6 +144,8 @@ const victoryDuration = wavDuration(victoryPath);
 const defeatDuration = wavDuration(defeatPath);
 const levelTrackCount = (gameConfig.match(/assets\/audio\/level-\d-/g) || []).length;
 if (levelTrackCount < 5) fail(`Every level needs its own music track. Found ${levelTrackCount}.`);
+const levelBackgrounds = [...gameConfig.matchAll(/assets\/optimized\/bg-level-\d\.jpg/g)].map((match) => match[0]);
+if (new Set(levelBackgrounds).size < 5) fail(`Every level needs a unique gameplay background. Found ${new Set(levelBackgrounds).size}.`);
 if (fs.statSync(clearPath).size > 512 * 1024) fail("Clear victory cue should stay short and lightweight.");
 if (victoryDuration < 3 || victoryDuration > 7) fail(`Victory sting should be short and rising: ${victoryDuration.toFixed(1)}s`);
 if (defeatDuration < 4 || defeatDuration > 8) fail(`Defeat sting should be restrained and non-harsh: ${defeatDuration.toFixed(1)}s`);

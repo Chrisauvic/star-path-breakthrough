@@ -199,9 +199,12 @@ ui.playFinalVideoButton.addEventListener("click", () => {
 
 ui.skipFinalVideoButton.addEventListener("click", () => {
   if (ui.finalVideo) ui.finalVideo.pause();
+  ui.finalGateOverlay.classList.remove("final-gate-overlay--active");
   ui.finalVideoOverlay.classList.remove("final-video-overlay--active");
   ui.finalVideoOverlay.classList.remove("final-video-overlay--needs-tap");
-  showResult();
+  ui.finalVideoOverlay.classList.remove("final-video-overlay--loading");
+  ui.finalVideoOverlay.classList.remove("final-video-overlay--stargate");
+  showResult({ animateScore: false });
 });
 
 document.getElementById("retryButton").addEventListener("click", () => {
