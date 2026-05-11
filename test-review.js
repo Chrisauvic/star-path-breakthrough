@@ -137,6 +137,14 @@ if (!resultFlow.includes('video.style.visibility = "hidden"') || !resultFlow.inc
   fail("Final video must remain hidden until the first playable frame to avoid black flashes.");
 }
 
+const styles = fs.readFileSync(path.join(root, "styles.css"), "utf8");
+if (!styles.includes(".final-video-overlay--stargate::before") || !styles.includes("mix-blend-mode: screen")) {
+  fail("Final video should keep a semi-transparent stargate layer in front of the video.");
+}
+if (!styles.includes(".final-video {") || !styles.includes("z-index: 1") || !styles.includes(".final-video-skip") || !styles.includes("z-index: 3")) {
+  fail("Final video layering should keep the video under the stargate overlay while controls remain clickable.");
+}
+
 const victoryPath = path.join(root, "assets", "audio", "victory-sting.wav");
 const clearPath = path.join(root, "assets", "audio", "clear-winneris.ogg");
 const defeatPath = path.join(root, "assets", "audio", "defeat-sting.wav");

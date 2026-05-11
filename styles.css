@@ -709,28 +709,29 @@ p {
   display: grid;
 }
 
-.final-video-overlay--loading.final-video-overlay--stargate::before {
-  content: "STARGATE OPEN";
+.final-video-overlay--stargate::before {
+  content: "";
   position: absolute;
-  left: 50%;
-  bottom: 18%;
-  translate: -50% 0;
-  z-index: 1;
-  color: var(--text-soft);
-  font-family: var(--font-data);
-  font-size: 12px;
-  letter-spacing: 0.16em;
-  text-shadow: 0 0 18px rgba(89, 214, 255, 0.7);
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(247, 251, 255, 0.16) 0 5%, rgba(89, 214, 255, 0.12) 14%, transparent 38%),
+    url("assets/optimized/bg-clear.jpg") center / cover no-repeat;
+  opacity: 0.26;
+  mix-blend-mode: screen;
 }
 
-.final-video-overlay--loading.final-video-overlay--stargate::after {
+.final-video-overlay--stargate::after {
   content: "";
   position: absolute;
   left: 50%;
-  top: 42%;
-  width: min(58vw, 280px);
+  top: 39%;
+  width: min(68vw, 330px);
   aspect-ratio: 1;
   translate: -50% 0;
+  z-index: 2;
+  pointer-events: none;
   border: 8px solid rgba(89, 214, 255, 0.56);
   border-top-color: rgba(247, 251, 255, 0.92);
   border-right-color: rgba(255, 207, 90, 0.8);
@@ -738,11 +739,14 @@ p {
   box-shadow:
     0 0 30px rgba(89, 214, 255, 0.58),
     inset 0 0 28px rgba(89, 214, 255, 0.2);
-  opacity: 0.72;
-  animation: finalGateSpin 1.4s linear infinite, loadingPulse 1.2s ease-in-out infinite;
+  opacity: 0.34;
+  mix-blend-mode: screen;
+  animation: finalGateSpin 2.4s linear infinite, loadingPulse 2s ease-in-out infinite;
 }
 
 .final-video {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -760,6 +764,7 @@ p {
 
 .final-video-play {
   position: absolute;
+  z-index: 3;
   left: 50%;
   bottom: max(88px, calc(env(safe-area-inset-bottom) + 78px));
   translate: -50% 0;
@@ -780,6 +785,7 @@ p {
 
 .final-video-skip {
   position: absolute;
+  z-index: 3;
   right: max(18px, env(safe-area-inset-right));
   bottom: max(18px, env(safe-area-inset-bottom));
   width: auto;
